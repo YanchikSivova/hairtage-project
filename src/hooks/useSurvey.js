@@ -44,8 +44,7 @@ export const useSurvey = () => {
     const submitAnswers = async()=>{
         setError(null);
         try{
-            const result = await postSurvey(answers);
-            return result;
+            localStorage.setItem("answers", answers);
         } catch(err){
             setError(err.message);
             throw err;

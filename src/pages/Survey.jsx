@@ -10,6 +10,7 @@ import Progress from "../components/Progress";
 import arrowLeft from "../assets/icons/arrow-left.svg";
 import arrowRight from "../assets/icons/arrow-right.svg";
 import { useAuth } from "../hooks/useAuth";
+import { postAuthSurveys } from "../api/hairtageApi";
 
 const Survey = () => {
     const {user} = useAuth;
@@ -21,6 +22,7 @@ const Survey = () => {
         currentQuestion,
         selectedOptionIndex,
         error,
+        setError,
         answers,
         totalQuestions,
         isLastQuestion,
@@ -44,7 +46,14 @@ const Survey = () => {
             try {
                 await submitAnswers();
                 if (user){
-                    navigate('/results');
+                    try{
+                        await postAuthSurveys(answers)
+                    }catch(err){
+                        setError(err);
+                        throw err;
+                    }finally{
+                        navigate('/results');
+                    }
                 }else{
                     navigate('/survey/success')
                 }

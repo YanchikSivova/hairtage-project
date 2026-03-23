@@ -13,6 +13,7 @@ import Register from './pages/Register'
 import Account from './pages/Account'
 import Settings from './pages/Settings'
 import SurveySuccess from './pages/SurveySuccess'
+import Results from './pages/Results'
 function App() {
 
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path='/register' element={<Register />} />
         <Route path='/account' element={<Account />} />
         <Route path='/account/settings' element={<Settings />} />
+        <Route path='/results' element={<Results />} />
       </Routes>
     </div>
   )

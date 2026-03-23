@@ -5,6 +5,7 @@ import '../styles/pages/login.css';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { postAuthSurveys } from "../api/hairtageApi";
  function Login(){
     const navigate = useNavigate();
     const { login, loading, error } = useAuth();
@@ -53,6 +54,11 @@ import { useAuth } from "../hooks/useAuth";
         }
         const success = await login(formData.email, formData.password);
         if (success){
+            //Если до этого был пройден опрос, отправить его на сервер, удалить из локалсторадж
+            if (localStorage.getItem("answers") !== null){
+                await postAuthSurveys(localStorage.getItem("answers"))
+                localStorage.removeItem("answers")
+            }
             navigate('/account');
         }
     };

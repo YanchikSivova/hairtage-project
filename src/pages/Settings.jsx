@@ -84,7 +84,7 @@ function Settings() {
                             id="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className={validationErrors.name ? 'settings-input error' : ''}
+                            className={validationErrors.name ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
                             required />
                         {validationErrors.name && (
@@ -101,7 +101,7 @@ function Settings() {
                             placeholder="your@email.com"
                             value={formData.email}
                             onChange={handleChange}
-                            className={validationErrors.email ? 'settings-input error' : ''}
+                            className={validationErrors.email ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
                             required
                         />
@@ -119,7 +119,7 @@ function Settings() {
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={handleChange}
-                            className={validationErrors.password ? 'settings-input error' : ''}
+                            className={validationErrors.password ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
                             required
                         />
