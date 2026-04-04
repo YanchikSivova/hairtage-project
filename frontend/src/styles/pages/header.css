@@ -1,0 +1,124 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 60px;
+}
+
+.nav {
+    display: flex;
+    gap: 48px;
+    font-size: 24px;
+    list-style: none;
+}
+
+.nav a{
+    font: var(--font-main);
+    /* Наследуем шрифт от родителя (размер, жирность) */
+    color: var(--text);
+    /* Цвет как у ссылок */
+    text-decoration: none;
+    /* Убираем подчеркивание, если бы оно было */
+}
+
+/* .nav button {
+    background: none;
+   
+    border: none;
+    
+    padding: 0;
+
+    font: var(--font-main);
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    text-decoration: none;
+  
+    display: inline-block;
+
+} */
+
+.nav li :hover {
+    color: var(--green-dark);
+    /* Тот же цвет при наведении */
+}
+
+.nav a.active {
+    font-weight: 700;
+    /* Жирный для активной кнопки */
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+}
+
+.brand img {
+    width: 60px;
+    height: auto;
+}
+
+/* БУРГЕР */
+.burger {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.burger span {
+    width: 28px;
+    height: 3px;
+    background-color: var(--text);
+    border-radius: 2px;
+}
+
+/* ====== MOBILE ====== */
+@media (max-width: 900px) {
+
+    .header {
+        padding: 16px 24px;
+    }
+
+    .burger {
+        display: flex;
+        order: -1;
+        /* слева */
+    }
+
+    .nav {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        width: 100%;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px;
+        display: none;
+    }
+
+    .nav.open {
+        display: flex;
+        background-color: var(--bg-white);
+        border-bottom: 1px solid var(--text-muted);
+        z-index: 2;
+    }
+
+    .header.open {
+        background-color: var(--bg-white);
+    }
+
+    .nav button {
+        font-size: 20px;
+    }
+
+    .brand {
+        margin-left: auto;
+    }
+}
