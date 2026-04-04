@@ -1,82 +1,89 @@
-import React from "react";
-import { useResults } from "../hooks/useResults";
+import { useSearchParams } from 'react-router-dom'
+import { useResults } from '../hooks/useResults'
 import '../styles/pages/results.css'
+
+const PRICE_LABELS = {
+  LOW: 'Низкий',
+  MEDIUM: 'Средний',
+  HIGH: 'Высокий',
+}
+
 function Results() {
-    const {
-        results,
-        shampoos,
-        masks,
-        conditioners,
-        error,
-        loading
-    } = useResults();
+  const [searchParams] = useSearchParams()
+  const hairTypeIdParam = searchParams.get('hairTypeId')
+  const hairTypeId = hairTypeIdParam ? Number(hairTypeIdParam) : null
 
-    const renderProductGrid = (products, categoryTitle) => {
-        if (!products || products.length === 0) {
-            return (
-                <div className="categoryContainer">
-                    <p className="category-title">{categoryTitle}</p>
-                    <p>Нет продуктов в этой категории</p>
-                </div>
-            )
-        }
-        return (
-            <div className="categoryContainer">
-                <p className="category-title">{categoryTitle}</p>
-                <div className="products-grid">
-                    {products.map(product => (
-                        <div key={product.id || product.name} className="product-card">
-                            <img
-                                src={`assets/images/${product.pic_url}`}
-                                alt={product.name}
-                            />
-                            <div className="product-info">
-                                <p>{product.name}</p>
-                                <div className="price">
-                                    Ценовой сегмент: {product.price_category}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
+  const { results, shampoos, masks, conditioners, error, loading } = useResults(hairTypeId)
 
-    if (loading) {
-        return (
-            <main className="results">
-                <h1 className="results-title">Ваша персональная подборка</h1>
-                <div className="categoryContainer">
-                    <p>Загрузка...</p>
-                </div>
-            </main>
-        );
-    }
-
-    if (error) {
-        return (
-            <main className="results">
-                <h1 className="results-title">Ваша персональная подборка</h1>
-                <div className="categoryContainer">
-                    <p>Ошибка: {error}</p>
-                </div>
-            </main>
-        )
-    }
+  const renderProductGrid = (products, categoryTitle) => {
+    if (!products || products.length === 0) return null
 
     return (
-        <main className="results">
-            <h1 className="results-title">Ваша персональная подборка</h1>
-            {results.length === 0 && (
-                <div className="categoryContainer">
-                    <p>Не удалось получить результаты опроса</p>
+      <div className='categoryContainer'>
+        <p className='category-title'>{categoryTitle}</p>
+
+        <div className='products-grid'>
+          {products.map((product, index) => (
+            <div
+              key={product.productId || `${product.productName}-${index}`}
+              className='product-card'
+            >
+              {product.picUrl ? (
+                <img src={product.picUrl} alt={product.productName} />
+              ) : (
+                <div className='product-image-placeholder'>Нет изображения</div>
+              )}
+
+              <div className='product-info'>
+                <p>{product.productName}</p>
+                <div className='price'>
+                  Ценовой сегмент: {PRICE_LABELS[product.price] || product.price}
                 </div>
-            )}
-            {shampoos && shampoos.length > 0 && renderProductGrid(shampoos, "Шампуни")}
-            {masks && masks.length > 0 && renderProductGrid(masks, "Маски")}
-            {conditioners && conditioners.length > 0 && renderProductGrid(conditioners, "<Бальзамы и кондиционеры")}
-        </main>
-    );
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <main className='results'>
+        <h1 className='results-title'>Ваша персональная подборка</h1>
+        <div className='categoryContainer'>
+          <p>Загрузка...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className='results'>
+        <h1 className='results-title'>Ваша персональная подборка</h1>
+        <div className='categoryContainer'>
+          <p>Ошибка: {error}</p>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className='results'>
+      <h1 className='results-title'>Ваша персональная подборка</h1>
+
+      {results.length === 0 && (
+        <div className='categoryContainer'>
+          <p>Не удалось получить результаты опроса</p>
+        </div>
+      )}
+
+      {renderProductGrid(shampoos, 'Шампуни')}
+      {renderProductGrid(masks, 'Маски')}
+      {renderProductGrid(conditioners, 'Бальзамы и кондиционеры')}
+    </main>
+  )
 }
-export default Results;
+
+export default Results

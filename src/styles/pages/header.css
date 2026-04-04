@@ -7,59 +7,87 @@
 
 .nav {
     display: flex;
+    align-items: center;
     gap: 48px;
     font-size: 24px;
     list-style: none;
 }
 
-.nav a{
-    font: var(--font-main);
-    /* Наследуем шрифт от родителя (размер, жирность) */
+.nav a {
     color: var(--text);
-    /* Цвет как у ссылок */
     text-decoration: none;
-    /* Убираем подчеркивание, если бы оно было */
+    font-family: var(--font-main);
 }
-
-/* .nav button {
-    background: none;
-   
-    border: none;
-    
-    padding: 0;
-
-    font: var(--font-main);
-
-    color: var(--text);
-
-    cursor: pointer;
-
-    text-decoration: none;
-  
-    display: inline-block;
-
-} */
 
 .nav li :hover {
     color: var(--green-dark);
-    /* Тот же цвет при наведении */
 }
 
 .nav a.active {
     font-weight: 700;
-    /* Жирный для активной кнопки */
+}
+
+.admin-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-main);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.admin-link-btn:hover {
+    color: var(--green-dark);
+}
+
+.nav-admin-btn {
+    font-size: inherit;
+    line-height: 1;
 }
 
 .brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 12px;
     font-size: 22px;
+    line-height: 1;
+    color: var(--text);
 }
 
 .brand img {
     width: 60px;
     height: auto;
+    display: block;
+    flex-shrink: 0;
+}
+
+.brand-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    font: inherit;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.brand-button:hover {
+    color: var(--text);
+    text-decoration: none;
 }
 
 /* БУРГЕР */
@@ -79,9 +107,7 @@
     border-radius: 2px;
 }
 
-/* ====== MOBILE ====== */
 @media (max-width: 900px) {
-
     .header {
         padding: 16px 24px;
     }
@@ -89,7 +115,6 @@
     .burger {
         display: flex;
         order: -1;
-        /* слева */
     }
 
     .nav {
@@ -98,6 +123,7 @@
         left: 0;
         width: 100%;
         flex-direction: column;
+        align-items: flex-start;
         gap: 24px;
         padding: 24px;
         display: none;
@@ -114,11 +140,21 @@
         background-color: var(--bg-white);
     }
 
-    .nav button {
-        font-size: 20px;
+    .admin-link-btn,
+    .nav-admin-btn {
+        font-size: inherit;
+        line-height: 1;
     }
 
-    .brand {
+    .brand,
+    .brand-button {
+        font-size: 18px;
+        gap: 10px;
+        line-height: 1;
         margin-left: auto;
+    }
+
+    .brand img {
+        width: 44px;
     }
 }

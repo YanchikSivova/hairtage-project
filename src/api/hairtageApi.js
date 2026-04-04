@@ -1,37 +1,78 @@
-import { formApi, api } from "./apiClient";
+import { formApi, api } from './apiClient'
 
-// Отправляет опрос неавторизованного пользователя, получает продукты
-export async function postSurvey(answers){
-    const response = await api.post('/selection', answers);
-    return response.data;
+// Опрос
+export async function postSurvey(answers) {
+  const response = await api.post('/person/selection', answers)
+  return response.data
 }
 
-// Отправляет опрос авторизованного пользователя для добавления в бд
-export async function postAuthSurveys(answers){
-    const response = await formApi.post('/selection', answers);
-    return response.data;
+export async function postAuthSurveys(answers) {
+  const response = await api.post('/person/selection', answers)
+  return response.data
 }
 
-export async function getSurveys(){
-    const response = await formApi.get('/surveys');
-    return response.data;
+// Временно для старого SurveyHistory.jsx
+export async function getSurveys() {
+  const response = await api.get('/person/accountInfo')
+  return response.data?.history ?? []
 }
 
-//Получает результаты последнего опроса авторизованного пользователя
-export async function getResults(){
-    const response = await formApi.get('/results');
-    return response.data;
+// Текущая подборка авторизованного пользователя
+export async function getResults() {
+  const response = await api.get('/person/selection/auth')
+  return response.data
 }
 
-export async function postResults(){
-    const response = await api.post('/results', answers);
-    return response.data;
+// Временно для старого useResults.js:
+// неавторизованный пользователь получает результаты по локально сохранённым ответам
+export async function postResults(answers) {
+  const parsedAnswers =
+    typeof answers === 'string' ? answers.split(',').map((x) => Number(x)) : answers
+
+  const response = await api.post('/person/selection', parsedAnswers)
+  return response.data
 }
 
-export const authApi = {
-    login: (email, password) => formApi.post('/auth/login', {email, password}),
-    register: (name, email, password) => formApi.post('/auth/register', {name, email, password}),
-    logout: ()=>formApi.post('/auth/logout'),
-    getMe: () => api.get('/auth/me'),
-    settings: () => api.put('/auth/settings'),
-};
+// Подборка по записи из истории
+export async function getSelectionByHairTypeId(hairTypeId) {
+  const response = await api.get(`/person/selection/${hairTypeId}`)
+  return response.data
+}
+
+// Информация аккаунта
+export async function getAccountInfo() {
+  const response = await api.get('/person/accountInfo')
+  return response.data
+}
+
+export const adminApi = {
+  getProducts: async () => {
+    const response = await api.get('/admin')
+    return response.data
+  },
+
+  createProduct: async (productData) => {
+    const response = await api.post('/admin/create', productData)
+    return response.data
+  },
+
+  updateProduct: async (id, productData) => {
+    const response = await api.patch(`/admin/update/${id}`, productData)
+    return response.data
+  },
+
+  deleteProduct: async (id) => {
+    const response = await api.delete(`/admin/delete/${id}`)
+    return response.data
+  },
+
+  addProductsBulk: async (products) => {
+    const response = await api.post('/product/addProducts', products)
+    return response.data
+  },
+
+  addAdminRole: async (email) => {
+    const response = await api.patch(`/admin/addRole/${email}`)
+    return response.data
+  },
+}

@@ -6,15 +6,23 @@ import money from '../assets/icons/money.svg';
 import flask from '../assets/icons/flask.svg';
 import background1 from '../assets/images/background-1.svg';
 import background2 from '../assets/images/background-2.svg';
+
 function Home() {
     const navigate = useNavigate();
+
     const goToSurvey = () => {
         navigate('/survey')
     };
+
+    const goToAdminLogin = () => {
+        navigate('/admin/login')
+    };
+
     return (
         <div>
             <img src={background1} alt="" className="hero-bg" />
             <img src={background2} alt="" className="bottom-bg"></img>
+
             <main>
                 <section className="hero container">
                     <div className="hero-left card">
