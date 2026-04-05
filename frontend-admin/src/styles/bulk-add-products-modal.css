@@ -1,0 +1,126 @@
+.bulk-add-products-modal-content {
+  width: min(920px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 36px;
+  border: 1px solid var(--green-dark);
+  overflow: auto;
+}
+
+.bulk-add-products-title {
+  font-size: 2rem;
+  font-weight: 400;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.bulk-add-products-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bulk-add-products-label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bulk-add-products-label span {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.bulk-add-products-textarea {
+  width: 100%;
+  min-height: 420px;
+  max-height: 52vh;
+  border-radius: 10px;
+  border: 1px solid var(--green-dark);
+  padding: 16px 18px;
+  font-size: 1rem;
+  line-height: 1.45;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  outline: none;
+  resize: vertical;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.bulk-add-products-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(162, 214, 109, 0.22);
+}
+
+.bulk-add-products-hint {
+  font-size: 1rem;
+  color: rgba(46, 46, 46, 0.72);
+}
+
+.bulk-add-products-buttons {
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.bulk-add-products-buttons .modal-btn {
+  margin: 0;
+  min-width: 150px;
+}
+
+@media (max-width: 900px) {
+  .bulk-add-products-modal-content {
+    width: min(700px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    padding: 20px;
+  }
+
+  .bulk-add-products-title {
+    font-size: 1.45rem;
+    margin-bottom: 16px;
+  }
+
+  .bulk-add-products-label span {
+    font-size: 1.05rem;
+  }
+
+  .bulk-add-products-textarea {
+    min-height: 240px;
+    max-height: 42vh;
+    font-size: 0.92rem;
+    padding: 12px 14px;
+  }
+
+  .bulk-add-products-hint {
+    font-size: 0.92rem;
+  }
+
+  .bulk-add-products-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bulk-add-products-buttons .modal-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .bulk-add-products-modal-content {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 16px;
+  }
+
+  .bulk-add-products-title {
+    font-size: 1.25rem;
+  }
+
+  .bulk-add-products-textarea {
+    min-height: 190px;
+    max-height: 36vh;
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .bulk-add-products-hint {
+    font-size: 0.85rem;
+  }
+}
