@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { api, formApi } from '../api/apiClient'
+import { api } from '../api/apiClient'
 
 const AuthContext = createContext(null)
 
@@ -13,31 +13,29 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   const loadAccountInfo = useCallback(async () => {
-    try {
-      const response = await api.get('/person/accountInfo')
-      const data = response?.data ?? null
+    const response = await api.get('/person/accountInfo')
+    const data = response?.data ?? null
 
-      setUser(
-        data
-          ? {
-              username: data.username ?? '',
-              email: data.email ?? '',
-              hairTypeId: data.hairTypeId ?? null,
-              history: Array.isArray(data.history) ? data.history : [],
-            }
-          : null
-      )
-    } catch (err) {
-      setUser(null)
-      throw err
-    }
+    setUser(
+      data
+        ? {
+            username: data.username ?? '',
+            email: data.email ?? '',
+            hairTypeId: data.hairTypeId ?? null,
+            history: Array.isArray(data.history) ? data.history : [],
+          }
+        : null
+    )
+
+    return data
   }, [])
 
   const checkAdmin = useCallback(async () => {
     try {
       const response = await api.get(ADMIN_CHECK_ENDPOINT)
-      setIsAdmin(Boolean(response?.data))
-      return Boolean(response?.data)
+      const value = Boolean(response?.data)
+      setIsAdmin(value)
+      return value
     } catch {
       setIsAdmin(false)
       return false
@@ -49,26 +47,15 @@ export function AuthProvider({ children }) {
     setError(null)
 
     try {
-      const response = await api.get('/person/checkAuth')
-      const isAuthenticated = Boolean(response?.data?.authenticated)
-
-      setAuthenticated(isAuthenticated)
-
-      if (!isAuthenticated) {
-        setUser(null)
-        setIsAdmin(false)
-        return { authenticated: false, isAdmin: false }
-      }
-
       await loadAccountInfo()
-      const admin = await checkAdmin()
+      setAuthenticated(true)
 
+      const admin = await checkAdmin()
       return { authenticated: true, isAdmin: admin }
-    } catch (err) {
+    } catch {
       setAuthenticated(false)
       setUser(null)
       setIsAdmin(false)
-      setError(err?.response?.data?.message || 'Ошибка проверки авторизации')
       return { authenticated: false, isAdmin: false }
     } finally {
       setLoading(false)
@@ -84,7 +71,16 @@ export function AuthProvider({ children }) {
     setError(null)
 
     try {
-      await formApi.post('/login', { email, password })
+      await api.post(
+        '/login',
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
+
       return await checkAuth()
     } catch (err) {
       setAuthenticated(false)
@@ -150,7 +146,11 @@ export function AuthProvider({ children }) {
     setError(null)
 
     try {
-      await formApi.post('/logout')
+      await api.post('/logout', null, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
     } catch (err) {
       setError(err?.response?.data?.message || 'Ошибка при выходе')
     } finally {

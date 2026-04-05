@@ -1,78 +1,85 @@
-import { formApi, api } from './apiClient'
+import { api } from './apiClient'
 
-// Опрос
+// Отправляет опрос, получает продукты
 export async function postSurvey(answers) {
   const response = await api.post('/person/selection', answers)
   return response.data
 }
 
-export async function postAuthSurveys(answers) {
-  const response = await api.post('/person/selection', answers)
-  return response.data
-}
-
-// Временно для старого SurveyHistory.jsx
-export async function getSurveys() {
-  const response = await api.get('/person/accountInfo')
-  return response.data?.history ?? []
-}
-
-// Текущая подборка авторизованного пользователя
+// Получает результаты последнего опроса авторизованного пользователя
 export async function getResults() {
   const response = await api.get('/person/selection/auth')
   return response.data
 }
 
-// Временно для старого useResults.js:
-// неавторизованный пользователь получает результаты по локально сохранённым ответам
-export async function postResults(answers) {
-  const parsedAnswers =
-    typeof answers === 'string' ? answers.split(',').map((x) => Number(x)) : answers
-
-  const response = await api.post('/person/selection', parsedAnswers)
+// Отправляет тип волос, возвращает список продуктов из истории
+export async function getResultsByHairtype(hairtypeId) {
+  const response = await api.get(`/person/selection/${hairtypeId}`)
   return response.data
 }
 
-// Подборка по записи из истории
-export async function getSelectionByHairTypeId(hairTypeId) {
-  const response = await api.get(`/person/selection/${hairTypeId}`)
-  return response.data
-}
+export const authApi = {
+  login: (email, password) =>
+    api
+      .post(
+        '/login',
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      )
+      .then((res) => res.data),
 
-// Информация аккаунта
-export async function getAccountInfo() {
-  const response = await api.get('/person/accountInfo')
-  return response.data
+  register: (name, email, password) =>
+    api
+      .post('/person/registration', {
+        username: name,
+        email,
+        password,
+      })
+      .then((res) => res.data),
+
+  logout: () =>
+    api
+      .post('/logout', null, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+      .then((res) => res.data),
+
+  getMe: () => api.get('/person/accountInfo').then((res) => res.data),
+
+  checkAuth: () =>
+    api
+      .get('/person/accountInfo')
+      .then((res) => ({ authenticated: true, user: res.data }))
+      .catch(() => ({ authenticated: false })),
+
+  settings: (name, email, password) =>
+    api
+      .post('/person/update', {
+        username: name,
+        email,
+        password,
+      })
+      .then((res) => res.data),
 }
 
 export const adminApi = {
-  getProducts: async () => {
-    const response = await api.get('/admin')
-    return response.data
-  },
+  getProducts: () => api.get('/admin').then((res) => res.data),
 
-  createProduct: async (productData) => {
-    const response = await api.post('/admin/create', productData)
-    return response.data
-  },
+  createProduct: (data) =>
+    api.post('/admin/create', data).then((res) => res.data),
 
-  updateProduct: async (id, productData) => {
-    const response = await api.patch(`/admin/update/${id}`, productData)
-    return response.data
-  },
+  updateProduct: (productId, data) =>
+    api.patch(`/admin/update/${productId}`, data).then((res) => res.data),
 
-  deleteProduct: async (id) => {
-    const response = await api.delete(`/admin/delete/${id}`)
-    return response.data
-  },
+  deleteProduct: (productId) =>
+    api.delete(`/admin/delete/${productId}`).then((res) => res.data),
 
-  addProductsBulk: async (products) => {
-    const response = await api.post('/product/addProducts', products)
-    return response.data
-  },
-
-  addAdminRole: async (email) => {
-    const response = await api.patch(`/admin/addRole/${email}`)
-    return response.data
-  },
+  addRole: (email) =>
+    api.patch(`/admin/addRole/${email}`).then((res) => res.data),
 }
