@@ -46,7 +46,7 @@ function Results() {
                     {products.map(product => (
                         <div key={product.id || product.productName} className="product-card">
                             <img
-                                src={product.picUrl}
+                                src = {`/images/${product.picUrl}`}
                                 alt={product.name}
                             />
                             <div className="product-info">
