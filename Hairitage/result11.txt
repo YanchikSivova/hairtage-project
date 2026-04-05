@@ -1,0 +1,1685 @@
+===== ./src/test/java/ru/zyryanova/ProductService/ProductServiceApplicationTests.java =====
+package ru.zyryanova.ProductService;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class ProductServiceApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/config/SecurityConfig.java =====
+package ru.zyryanova.ProductService.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import ru.zyryanova.ProductService.service.User.PersonDetailsService;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    private final PersonDetailsService personDetailsService;
+
+    @Autowired
+    public SecurityConfig(PersonDetailsService personDetailsService) {
+        this.personDetailsService = personDetailsService;
+    }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http){
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers(
+                                "/logout",
+                                "/login",
+                                "/person/registration",
+                                "/person/selection"
+                        ).permitAll()
+                        .requestMatchers("/person/accountInfo", "/person/selection/auth").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/product/addProducts").hasRole("ADMIN")
+                        .anyRequest().permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(401);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"ok\":false,\"error\":\"unauthorized\"}");
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(403);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"ok\":false,\"error\":\"forbidden\"}");
+                        })
+                )
+                .formLogin(form -> form
+                        .loginProcessingUrl("/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .successHandler((req, res, auth) -> {
+                            res.setStatus(200);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"ok\":true}");
+                        })
+                        .failureHandler((req, res, ex) -> {
+                            res.setStatus(401);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"ok\":false,\"error\":\"bad_credentials\"}");
+                        })
+                    )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessHandler((req, res, auth) -> {
+                            res.setStatus(200);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"ok\":true}");
+                        })
+                )
+                .userDetailsService(personDetailsService);
+        return http.build();
+    }
+    @Bean
+    PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/dto/ProductDto.java =====
+package ru.zyryanova.ProductService.entity.dto;
+
+import java.util.List;
+
+public class ProductDto{
+    private String productName;
+    private String productTypeName;
+    private List<String> ingredients;
+    private String picUrl;
+    private String price;
+
+    public ProductDto() {
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getProductTypeName() {
+        return productTypeName;
+    }
+
+    public void setProductTypeName(String productTypeName) {
+        this.productTypeName = productTypeName;
+    }
+
+    public List<String> getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(List<String> ingredients) {
+        this.ingredients = ingredients;
+    }
+
+    public String getPicUrl() {
+        return picUrl;
+    }
+
+    public void setPicUrl(String picUrl) {
+        this.picUrl = picUrl;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
+    }
+}
+
+
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/dto/PersonInfoDto.java =====
+package ru.zyryanova.ProductService.entity.dto;
+
+
+import java.util.List;
+
+public class PersonInfoDto {
+    private String username;
+    private String email;
+    private Integer hairTypeId;
+    private List<PersonResultDto> history;
+
+    public PersonInfoDto() {}
+
+    public PersonInfoDto(Integer hairTypeId, String email, String username, List<PersonResultDto> history) {
+        this.hairTypeId = hairTypeId;
+        this.email = email;
+        this.username = username;
+        this.history = history;
+    }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public Integer getHairTypeId() {
+        return hairTypeId;
+    }
+
+    public void setHairTypeId(Integer hairTypeId) {
+        this.hairTypeId = hairTypeId;
+    }
+
+    public List<PersonResultDto> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<PersonResultDto> history) {
+        this.history = history;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/dto/PersonResultDto.java =====
+package ru.zyryanova.ProductService.entity.dto;
+
+import java.time.LocalDateTime;
+
+public class PersonResultDto {
+    private Integer hairTypeId;
+    private String hairTypeName;
+    private LocalDateTime createdAt;
+
+    public PersonResultDto() {
+    }
+
+    public Integer getHairTypeId() {
+        return hairTypeId;
+    }
+
+    public void setHairTypeId(Integer hairTypeId) {
+        this.hairTypeId = hairTypeId;
+    }
+
+    public String getHairTypeName() {
+        return hairTypeName;
+    }
+
+    public void setHairTypeName(String hairTypeName) {
+        this.hairTypeName = hairTypeName;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/ProductClassScore.java =====
+package ru.zyryanova.ProductService.entity;
+
+import jakarta.persistence.*;
+import ru.zyryanova.ProductService.entity.bd.Product;
+import ru.zyryanova.ProductService.entity.bd.PurposeIng;
+
+
+@Entity
+@Table(name = "product_class_score")
+public class ProductClassScore {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_class_score_id")
+    private Integer productClassScoreId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "purpose_ing_id", nullable = false)
+    private PurposeIng purposeIng;
+
+    @Column(name = "score", nullable = false)
+    private Integer score;
+
+    public ProductClassScore() {}
+
+    public Integer getProductClassScoreId() {
+        return productClassScoreId;
+    }
+
+    public void setProductClassScoreId(Integer productClassScoreId) {
+        this.productClassScoreId = productClassScoreId;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public PurposeIng getPurposeIng() {
+        return purposeIng;
+    }
+
+    public void setPurposeIng(PurposeIng purposeIng) {
+        this.purposeIng = purposeIng;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
+    }
+}
+
+
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/Product.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Entity
+@Table(name = "product")
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
+    private Integer productId;
+
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_type_id")
+    private ProductType productType;
+
+    @Column(name = "ingredients_list", columnDefinition = "text[]")
+    private List<String> ingredientsList;
+
+    @Column(name = "pic_url")
+    private String picUrl;
+
+    @Column(name = "price_category")
+    private String price;
+
+    @ManyToMany
+    @JoinTable(
+            name = "product_suitability",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "hair_type_id")
+    )
+    private Set<HairType> productSuitability = new HashSet<>();
+
+    public Product() {
+    }
+
+    public Integer getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Integer productId) {
+        this.productId = productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public ProductType getProductType() {
+        return productType;
+    }
+
+    public void setProductType(ProductType productType) {
+        this.productType = productType;
+    }
+
+    public Set<HairType> getProductSuitability() {
+        return productSuitability;
+    }
+
+    public void setProductSuitability(Set<HairType> productSuitability) {
+        this.productSuitability = productSuitability;
+    }
+
+    public List<String> getIngredientsList() {
+        return ingredientsList;
+    }
+
+    public void setIngredientsList(List<String> ingredientsList) {
+        this.ingredientsList = ingredientsList;
+    }
+
+    public String getPicUrl() {
+        return picUrl;
+    }
+
+    public void setPicUrl(String picUrl) {
+        this.picUrl = picUrl;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/Ingredient.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "ingredient")
+public class Ingredient {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ingredient_id")
+    private Integer ingredientId;
+
+    @Column(name = "ingredient_name", nullable = false)
+    private String ingredientName;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "purpose_ing_id")
+    private PurposeIng purposeIng;
+
+    public Ingredient() {
+    }
+
+    public Integer getIngredientId() {
+        return ingredientId;
+    }
+
+    public void setIngredientId(Integer ingredientId) {
+        this.ingredientId = ingredientId;
+    }
+
+    public String getIngredientName() {
+        return ingredientName;
+    }
+
+    public void setIngredientName(String ingredientName) {
+        this.ingredientName = ingredientName;
+    }
+
+    public PurposeIng getPurposeIng() {
+        return purposeIng;
+    }
+
+    public void setPurposeIng(PurposeIng purposeIng) {
+        this.purposeIng = purposeIng;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/PurposeIng.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+import ru.zyryanova.ProductService.enums.Group;
+
+@Entity
+@Table(name = "purpose_ing")
+public class PurposeIng {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "purpose_ing_id")
+    private Integer purposeIngId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose_ing_name")
+    private Group purposeIngName;
+
+    public PurposeIng() {}
+
+    public Integer getPurposeIngId() {
+        return purposeIngId;
+    }
+
+    public void setPurposeIngId(Integer purposeIngId) {
+        this.purposeIngId = purposeIngId;
+    }
+
+    public Group getPurposeIngName() {
+        return purposeIngName;
+    }
+
+    public void setPurposeIngName(Group purposeIngName) {
+        this.purposeIngName = purposeIngName;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/ProductType.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "product_type")
+public class ProductType {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_type_id")
+    private Integer productTypeId;
+
+    @Column(name = "product_type_name", nullable = false, unique = true)
+    private String productTypeName;
+
+    public ProductType() {
+    }
+
+    public Integer getProductTypeId() {
+        return productTypeId;
+    }
+
+    public void setProductTypeId(Integer productTypeId) {
+        this.productTypeId = productTypeId;
+    }
+
+    public String getProductTypeName() {
+        return productTypeName;
+    }
+
+    public void setProductTypeName(String productTypeName) {
+        this.productTypeName = productTypeName;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/PersonResult.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
+import jakarta.persistence.*;
+import ru.zyryanova.ProductService.entity.auth.Person;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "person_result")
+public class PersonResult {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "person_result_id")
+    private Integer personResultId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "person_id")
+    private Person person;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "hair_type_id")
+    private HairType hairType;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    public PersonResult() {}
+
+    public PersonResult(LocalDateTime createdAt, HairType hairType, Person person) {
+        this.createdAt = createdAt;
+        this.hairType = hairType;
+        this.person = person;
+    }
+
+    public Integer getPersonResultId() {
+        return personResultId;
+    }
+
+    public void setPersonResultId(Integer personResultId) {
+        this.personResultId = personResultId;
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+
+    public HairType getHairType() {
+        return hairType;
+    }
+
+    public void setHairType(HairType hairType) {
+        this.hairType = hairType;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/HairType.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "hair_type")
+public class HairType {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "hair_type_id")
+    private Integer hairTypeId;
+
+    @Column(name = "hair_type_name", nullable = false, unique = true)
+    private String hairTypeName;
+
+    public HairType() {
+    }
+
+    public Integer getHairTypeId() {
+        return hairTypeId;
+    }
+
+    public void setHairTypeId(Integer hairTypeId) {
+        this.hairTypeId = hairTypeId;
+    }
+
+    public String getHairTypeName() {
+        return hairTypeName;
+    }
+
+    public void setHairTypeName(String hairTypeName) {
+        this.hairTypeName = hairTypeName;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/bd/RelevantRange.java =====
+package ru.zyryanova.ProductService.entity.bd;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "relevant_range")
+public class RelevantRange {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "relevant_range_id")
+    private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "purpose_ing_id")
+    private PurposeIng purposeIng;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "hair_type_id")
+    private HairType hairType;
+
+    @Column(name = "min_value")
+    private Integer minValue;
+
+    @Column(name = "max_value")
+    private Integer maxValue;
+
+    protected RelevantRange() {}
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public PurposeIng getPurposeIng() {
+        return purposeIng;
+    }
+
+    public void setPurposeIng(PurposeIng purposeIng) {
+        this.purposeIng = purposeIng;
+    }
+
+    public HairType getHairType() {
+        return hairType;
+    }
+
+    public void setHairType(HairType hairType) {
+        this.hairType = hairType;
+    }
+
+    public Integer getMinValue() {
+        return minValue;
+    }
+
+    public void setMinValue(Integer minValue) {
+        this.minValue = minValue;
+    }
+
+    public Integer getMaxValue() {
+        return maxValue;
+    }
+
+    public void setMaxValue(Integer maxValue) {
+        this.maxValue = maxValue;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/entity/auth/Person.java =====
+package ru.zyryanova.ProductService.entity.auth;
+
+import jakarta.persistence.*;
+import ru.zyryanova.ProductService.entity.bd.HairType;
+import ru.zyryanova.ProductService.enums.Role;
+
+@Entity
+@Table(name = "person")
+public class Person{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "person_id")
+    private int id;
+
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "role")
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @ManyToOne
+    @JoinColumn(name = "hair_type_id")
+    private HairType hairType;
+
+    public Person() {
+    }
+
+    public HairType getHairType() {
+        return hairType;
+    }
+
+    public void setHairType(HairType hairType) {
+        this.hairType = hairType;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/entity/auth/PersonDetailsEntity.java =====
+package ru.zyryanova.ProductService.entity.auth;
+
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
+
+public class PersonDetailsEntity implements UserDetails {
+    private final Person person;
+
+    public PersonDetailsEntity(Person person) {
+        this.person = person;
+    }
+    public Person getUser() {
+        return person;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_"+ person.getRole().name()));
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return person.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return person.getEmail();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/enums/Group.java =====
+package ru.zyryanova.ProductService.enums;
+
+public enum Group {
+    HUMECTANTS,
+    EMOLLIENTS,
+    PROTEINS,
+    DRYING_ALCOHOLS,
+    HEAVY_OILS
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/enums/Role.java =====
+package ru.zyryanova.ProductService.enums;
+
+public enum Role {
+    ADMIN,
+    USER
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/controller/AdminController.java =====
+package ru.zyryanova.ProductService.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import ru.zyryanova.ProductService.entity.bd.Product;
+import ru.zyryanova.ProductService.entity.dto.ProductDto;
+import ru.zyryanova.ProductService.repo.ProductRepo;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+import ru.zyryanova.ProductService.service.Product.AnalyzeService;
+import ru.zyryanova.ProductService.service.User.AdminManageService;
+import ru.zyryanova.ProductService.service.User.PersonService;
+import ru.zyryanova.ProductService.service.Product.ProductService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/admin")
+public class AdminController {
+    private final AdminManageService adminManageService;
+    private final ProductService productService;
+    private final AnalyzeService analyzeService;
+
+
+    @Autowired
+    public AdminController(AdminManageService adminManageService, ProductService productService, AnalyzeService analyzeService) {
+        this.adminManageService = adminManageService;
+        this.productService = productService;
+        this.analyzeService = analyzeService;
+    }
+    @GetMapping()
+    public List<Product> allProducts(){
+        return productService.showAllProducts();
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public void deleteProduct(@PathVariable int id){
+        adminManageService.deleteProduct(id);
+    }
+    @PatchMapping("/update/{id}")
+    public void updateProduct(@RequestBody ProductDto productDto, @PathVariable int id){
+        adminManageService.updateProduct(productDto, id);
+    }
+    @PostMapping("/create")
+    public void createProduct(@RequestBody ProductDto productDto){
+        int productId = productService.createProduct(productDto).getProductId();
+        analyzeService.defineHairType(productId);
+    }
+    @PatchMapping("/addRole/{email}")
+    public void addRole(@PathVariable String email){
+        adminManageService.addRole(email);
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/controller/ProductController.java =====
+package ru.zyryanova.ProductService.controller;
+
+import org.springframework.web.bind.annotation.*;
+import ru.zyryanova.ProductService.entity.dto.ProductDto;
+import ru.zyryanova.ProductService.service.Product.AnalyzeService;
+import ru.zyryanova.ProductService.service.Product.ProductService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/product")
+public class ProductController {
+    private final ProductService productService;
+    private final AnalyzeService analyzeService;
+
+    public ProductController(ProductService productService, AnalyzeService analyzeService) {
+        this.productService = productService;
+        this.analyzeService = analyzeService;
+    }
+
+    @PostMapping("/addProducts")
+    public void createProduct(@RequestBody List<ProductDto> productDto){
+        for (ProductDto dto : productDto) {
+            int productId = productService.createProduct(dto).getProductId();
+            analyzeService.defineHairType(productId);
+        }
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/controller/PersonController.java =====
+package ru.zyryanova.ProductService.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import ru.zyryanova.ProductService.entity.dto.PersonInfoDto;
+import ru.zyryanova.ProductService.entity.dto.ProductDto;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.service.Product.ProductService;
+import ru.zyryanova.ProductService.service.Selection.SelectionService;
+import ru.zyryanova.ProductService.service.User.RegistrationService;
+import ru.zyryanova.ProductService.service.User.PersonService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/person")
+public class PersonController {
+    private final SelectionService selectionService;
+    private final ProductService productService;
+    private final RegistrationService registrationService;
+    private final PersonService personService;
+
+    @Autowired
+    public PersonController(SelectionService selectionService, ProductService productService, RegistrationService registrationService, PersonService personService) {
+        this.productService = productService;
+        this.selectionService = selectionService;
+        this.registrationService = registrationService;
+        this.personService = personService;
+    }
+    // это подборка сразу на основе определения типа волос (список сюда посылается)
+    @PostMapping("/selection")
+    public List<ProductDto> selectHairTypeAndProducts(@RequestBody List<Integer> answers, Authentication authentication){
+        int hairTypeId = selectionService.selectHairType(answers, authentication);
+        return productService.listOfProducts(hairTypeId);
+    }
+    @GetMapping("/selection/{hairTypeId}")
+    public List<ProductDto> getProductsByHairType(@PathVariable int hairTypeId) {
+        return productService.listOfProducts(hairTypeId);
+    }
+    // это подборка продуктов для аутентифицированного пользователя (подборка для аутентифицированного пользователя из бдшки)
+    @GetMapping("/selection/auth")
+    public List<ProductDto> selectProductsOfAuthPerson(Authentication authentication){
+        int hairTypeId = personService.defineHairTypeOfAuthPerson(authentication).getHairTypeId();
+        return productService.listOfProducts(hairTypeId);
+    }
+    @PostMapping("/registration")
+    public void registration(@RequestBody Person person){
+        registrationService.register(person);
+    }
+
+    @GetMapping("/accountInfo")
+    public ResponseEntity<PersonInfoDto> accountInfo(Authentication authentication) {
+        return personService.showInfo(authentication.getName());
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/finder/Finder.java =====
+package ru.zyryanova.ProductService.finder;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.entity.bd.Product;
+import ru.zyryanova.ProductService.globalHandler.exception.PersonNotFoundException;
+import ru.zyryanova.ProductService.globalHandler.exception.ProductNotFoundException;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+import ru.zyryanova.ProductService.repo.ProductRepo;
+
+@Component
+public class Finder {
+    private final PersonRepo personRepo;
+    private final ProductRepo productRepo;
+
+    @Autowired
+    public Finder(PersonRepo personRepo, ProductRepo productRepo) {
+        this.personRepo = personRepo;
+        this.productRepo = productRepo;
+    }
+
+    public Person findPersonOrThrow(String email) {
+        Person person = personRepo.findByEmail(email);
+        if (person == null) {
+            throw new PersonNotFoundException("Пользователь не найден");
+        }
+        return person;
+    }
+
+    public Person findPersonOrThrow(int id) {
+        return personRepo.findById(id)
+                .orElseThrow(() -> new PersonNotFoundException("Пользователь не найден"));
+    }
+
+    public Product findProductOrThrow(int id) {
+        return productRepo.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Продукт не найден"));
+    }
+
+    public Product findProductOrThrow(String productName) {
+        Product product = productRepo.findByProductName(productName);
+        if (product == null) {
+            throw new ProductNotFoundException("Продукт не найден");
+        }
+        return product;
+    }
+
+
+
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/ProductServiceApplication.java =====
+package ru.zyryanova.ProductService;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ProductServiceApplication {
+    public static void main(String[] args) {
+		SpringApplication.run(ProductServiceApplication.class, args);
+	}
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/service/User/RegistrationService.java =====
+package ru.zyryanova.ProductService.service.User;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.enums.Role;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+
+@Service
+public class RegistrationService {
+    private final PersonRepo personRepo;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public RegistrationService(PersonRepo personRepo, PasswordEncoder passwordEncoder) {
+        this.personRepo = personRepo;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Transactional
+    public void register(Person person){
+        person.setRole(Role.USER);
+        person.setPassword(passwordEncoder.encode(person.getPassword()));
+        personRepo.save(person);
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/service/User/PersonService.java =====
+package ru.zyryanova.ProductService.service.User;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.entity.bd.HairType;
+import ru.zyryanova.ProductService.entity.bd.PersonResult;
+import ru.zyryanova.ProductService.entity.dto.PersonInfoDto;
+import ru.zyryanova.ProductService.entity.dto.PersonResultDto;
+import ru.zyryanova.ProductService.enums.Role;
+import ru.zyryanova.ProductService.finder.Finder;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+import ru.zyryanova.ProductService.repo.PersonResultRepo;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class PersonService {
+    private final PersonResultRepo personResultRepo;
+    private final Finder finder;
+
+    public PersonService( PersonResultRepo personResultRepo, Finder finder) {
+        this.personResultRepo = personResultRepo;
+        this.finder = finder;
+    }
+
+    public ResponseEntity<PersonInfoDto> showInfo(String username){
+        Person person = finder.findPersonOrThrow(username);
+        Integer hairTypeId = person.getHairType() != null
+                ? person.getHairType().getHairTypeId()
+                : null;
+        List<PersonResultDto> list = findPersonREsultDtoList(personResultRepo.findByPerson_IdOrderByCreatedAtDesc(person.getId()));
+        PersonInfoDto personInfoDto =
+                new PersonInfoDto(hairTypeId,person.getEmail(), person.getUsername(), list);
+
+        return ResponseEntity.ok(personInfoDto);
+    }
+
+    @Transactional
+    public void addRole(int id){
+        finder.findPersonOrThrow(id).setRole(Role.ADMIN);
+    }
+
+    public HairType defineHairTypeOfAuthPerson(Authentication authentication){
+        Person person = finder.findPersonOrThrow(authentication.getName());
+        if (person.getHairType() == null) {
+            throw new IllegalStateException("Тип волос не определен");
+        }
+        return person.getHairType();
+    }
+
+    public List<PersonResultDto> findPersonREsultDtoList(List<PersonResult> list){
+        List<PersonResultDto> result = new ArrayList<>();
+        for(PersonResult pr: list){
+            PersonResultDto personResultDto = new PersonResultDto();
+            personResultDto.setHairTypeId(pr.getHairType().getHairTypeId());
+            personResultDto.setHairTypeName(pr.getHairType().getHairTypeName());
+            personResultDto.setCreatedAt(pr.getCreatedAt());
+            result.add(personResultDto);
+        }
+        return result;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/service/User/PersonDetailsService.java =====
+package ru.zyryanova.ProductService.service.User;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.entity.auth.PersonDetailsEntity;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+
+@Service
+public class PersonDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
+    private final PersonRepo personRepo;
+
+    @Autowired
+    public PersonDetailsService(PersonRepo personRepo) {
+        this.personRepo = personRepo;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Person person = personRepo.findByEmail(username);
+        if (person == null) {
+            throw new UsernameNotFoundException("Пользователь не найден");
+        }
+        return new PersonDetailsEntity(person);
+    }
+
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/service/User/AdminManageService.java =====
+package ru.zyryanova.ProductService.service.User;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.bd.ProductType;
+import ru.zyryanova.ProductService.entity.dto.ProductDto;
+import ru.zyryanova.ProductService.entity.bd.Product;
+import ru.zyryanova.ProductService.finder.Finder;
+import ru.zyryanova.ProductService.repo.ProductRepo;
+import ru.zyryanova.ProductService.repo.ProductTypeRepo;
+import ru.zyryanova.ProductService.service.Product.AnalyzeService;
+import ru.zyryanova.ProductService.service.Product.ProductService;
+
+import java.util.Objects;
+
+@Service
+public class AdminManageService {
+    private final ProductRepo productRepo;
+    private final ProductTypeRepo productTypeRepo;
+    private final AnalyzeService analyzeService;
+    private final Finder finder;
+
+    public AdminManageService(ProductRepo productRepo, ProductTypeRepo productTypeRepo, AnalyzeService analyzeService, Finder finder) {
+        this.productRepo = productRepo;
+        this.productTypeRepo = productTypeRepo;
+        this.analyzeService = analyzeService;
+        this.finder = finder;
+    }
+
+    @Transactional
+    public void deleteProduct(int id){
+        Product product = finder.findProductOrThrow(id);
+        productRepo.delete(product);
+    }
+
+    @Transactional
+    public void updateProduct(ProductDto updateProduct, Integer id) {
+        Product product = finder.findProductOrThrow(id);
+
+        boolean ingredientsChanged = !Objects.equals(
+                product.getIngredientsList(),
+                updateProduct.getIngredients()
+        );
+
+        product.setProductName(updateProduct.getProductName());
+        product.setPicUrl(updateProduct.getPicUrl());
+        product.setPrice(updateProduct.getPrice());
+
+        ProductType productType = productTypeRepo.findByProductTypeName(updateProduct.getProductTypeName());
+        if (productType == null) {
+            throw new IllegalStateException("Тип продукта не найден");
+        }
+        product.setProductType(productType);
+
+        product.setIngredientsList(updateProduct.getIngredients());
+
+        if (ingredientsChanged) {
+            analyzeService.defineHairType(product.getProductId());
+        }
+    }
+    @Transactional
+    public void addRole(String email){
+        finder.findPersonOrThrow(email).setRole(ru.zyryanova.ProductService.enums.Role.ADMIN);
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/service/Product/AnalyzeService.java =====
+package ru.zyryanova.ProductService.service.Product;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.ProductClassScore;
+import ru.zyryanova.ProductService.entity.bd.*;
+import ru.zyryanova.ProductService.finder.Finder;
+import ru.zyryanova.ProductService.repo.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class AnalyzeService {
+    private final IngredientRepo ingredientRepo;
+    private final ProductRepo productRepo;
+    private final HairTypeRepo hairTypeRepo;
+    private final ProductClassScoreRepo productClassScoreRepo;
+    private final Finder finder;
+    private final PurposeIngRepo purposeIngRepo;
+    private final RelevantRangeRepo relevantRangeRepo;
+    private static final int K1 = 3;
+    private static final int K2 = 2;
+
+    public AnalyzeService(
+            IngredientRepo ingredientRepo,
+            ProductRepo productRepo,
+            HairTypeRepo hairTypeRepo,
+            ProductClassScoreRepo productClassScoreRepo,
+            Finder finder,
+            PurposeIngRepo purposeIngRepo,
+            RelevantRangeRepo relevantRangeRepo
+    ) {
+        this.ingredientRepo = ingredientRepo;
+        this.productRepo = productRepo;
+        this.hairTypeRepo = hairTypeRepo;
+        this.productClassScoreRepo = productClassScoreRepo;
+        this.finder = finder;
+        this.purposeIngRepo = purposeIngRepo;
+        this.relevantRangeRepo = relevantRangeRepo;
+    }
+
+    public Map<Integer, Integer> calculateScores(Product product) {
+        Map<Integer, Integer> scores = new HashMap<>();
+
+        List<String> ingredients = product.getIngredientsList();
+        int size = ingredients.size();
+
+        int firstPart = size / 3;
+        int secondPart = (2 * size) / 3;
+
+        for (int i = 0; i < size; i++) {
+            String ingredientName = ingredients.get(i);
+            Ingredient ingredient = ingredientRepo.findByIngredientName(ingredientName);
+
+            if (ingredient == null) continue;
+
+            int weight;
+
+            if (i < firstPart) {
+                weight = K1;
+            } else if (i < secondPart) {
+                weight = K2;
+            } else {
+                continue;
+            }
+
+            Integer purposeId = ingredient.getPurposeIng().getPurposeIngId();
+            scores.put(purposeId, scores.getOrDefault(purposeId, 0) + weight);
+        }
+
+        return scores;
+    }
+
+    @Transactional
+    public void saveProductScores(Product product, Map<Integer, Integer> scores) {
+        productClassScoreRepo.deleteByProduct_ProductId(product.getProductId());
+
+        for (Map.Entry<Integer, Integer> entry : scores.entrySet()) {
+            Integer purposeId = entry.getKey();
+            Integer score = entry.getValue();
+
+            PurposeIng purposeIng = purposeIngRepo.findById(purposeId).orElseThrow();
+
+            ProductClassScore pcs = new ProductClassScore();
+            pcs.setProduct(product);
+            pcs.setPurposeIng(purposeIng);
+            pcs.setScore(score);
+
+            productClassScoreRepo.save(pcs);
+        }
+    }
+
+    @Transactional
+    public void defineHairType(int productId) {
+        Product product = finder.findProductOrThrow(productId);
+
+        Map<Integer, Integer> scores = calculateScores(product);
+        saveProductScores(product, scores);
+
+        product.getProductSuitability().clear();
+
+        List<HairType> hairTypes = hairTypeRepo.findAll();
+
+        for (HairType hairType : hairTypes) {
+            List<RelevantRange> ranges = relevantRangeRepo.findByHairType_HairTypeId(hairType.getHairTypeId());
+
+            boolean ok = true;
+
+            for (RelevantRange range : ranges) {
+                Integer purposeId = range.getPurposeIng().getPurposeIngId();
+                int score = scores.getOrDefault(purposeId, 0);
+
+                if (score < range.getMinValue() || score > range.getMaxValue()) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok) {
+                product.getProductSuitability().add(hairType);
+            }
+        }
+
+        productRepo.save(product);
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/service/Product/ProductService.java =====
+package ru.zyryanova.ProductService.service.Product;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.bd.Product;
+import ru.zyryanova.ProductService.entity.bd.ProductType;
+import ru.zyryanova.ProductService.entity.dto.ProductDto;
+import ru.zyryanova.ProductService.repo.ProductRepo;
+import ru.zyryanova.ProductService.repo.ProductTypeRepo;
+
+import java.util.List;
+
+@Service
+public class ProductService {
+    private final ProductRepo productRepo;
+    private final ProductTypeRepo productTypeRepo;
+
+    public ProductService(ProductRepo productRepo, ProductTypeRepo productTypeRepo) {
+        this.productRepo = productRepo;
+        this.productTypeRepo = productTypeRepo;
+    }
+    public List<Product> showAllProducts(){
+        return productRepo.findAll();
+    }
+    @Transactional
+    public Product createProduct(ProductDto productDto) {
+        return productRepo.save(convertToProduct(productDto));
+    }
+
+
+
+    public Product convertToProduct(ProductDto productDto){
+        Product product = new Product();
+        product.setProductName(productDto.getProductName());
+
+        ProductType productType = productTypeRepo.findByProductTypeName(productDto.getProductTypeName());
+        if (productType == null) {
+            throw new IllegalStateException("Тип продукта не найден");
+        }
+
+        product.setProductType(productType);
+        product.setIngredientsList(productDto.getIngredients());
+        product.setPrice(productDto.getPrice());
+        product.setPicUrl(productDto.getPicUrl());
+        return product;
+    }
+
+    public List<ProductDto> listOfProducts(int hairTypeId){
+        List<Product> listOfProducts = productRepo.findByProductSuitability_HairTypeId(hairTypeId);
+        return responseList(listOfProducts);
+    }
+
+    public List<ProductDto> responseList(List<Product> listOfProducts){
+        return listOfProducts.stream().map(p -> {
+            ProductDto dto = new ProductDto();
+            dto.setProductName(p.getProductName());
+            dto.setProductTypeName(p.getProductType().getProductTypeName());
+            dto.setIngredients(p.getIngredientsList());
+            dto.setPicUrl(p.getPicUrl());
+            dto.setPrice(p.getPrice());
+            return dto;
+        }).toList();
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/service/Selection/SelectionService.java =====
+package ru.zyryanova.ProductService.service.Selection;
+
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.zyryanova.ProductService.entity.auth.Person;
+import ru.zyryanova.ProductService.entity.bd.HairType;
+import ru.zyryanova.ProductService.entity.bd.PersonResult;
+import ru.zyryanova.ProductService.finder.Finder;
+import ru.zyryanova.ProductService.repo.HairTypeRepo;
+import ru.zyryanova.ProductService.repo.PersonRepo;
+import ru.zyryanova.ProductService.repo.PersonResultRepo;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class SelectionService {
+    private final PersonRepo personRepo;
+    private final HairTypeRepo hairTypeRepo;
+    private final Finder finder;
+    private final PersonResultRepo personResultRepo;
+
+    public SelectionService(PersonRepo personRepo, HairTypeRepo hairTypeRepo, Finder finder, PersonResultRepo personResultRepo) {
+        this.personRepo = personRepo;
+        this.hairTypeRepo = hairTypeRepo;
+        this.finder = finder;
+        this.personResultRepo = personResultRepo;
+    }
+
+    @Transactional
+    public int selectHairType(List<Integer> answers, Authentication authentication){
+        Map<Integer, Integer> countMap = new HashMap<>();
+
+        for (int answer : answers) {
+            countMap.put(answer, countMap.getOrDefault(answer, 0) + 1);
+        }
+
+        int resType = 0;
+        int resValue = 0;
+
+        for (int key : countMap.keySet()) {
+            int value = countMap.get(key);
+            if (value > resValue) {
+                resValue = value;
+                resType = key;
+            }
+        }
+
+        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
+            Person person = finder.findPersonOrThrow(authentication.getName());
+            HairType hairType = hairTypeRepo.findById(resType).orElseThrow();
+            person.setHairType(hairType);
+            PersonResult personResult = new PersonResult(LocalDateTime.now(), hairType ,person);
+            personResultRepo.save(personResult);
+            personRepo.save(person);
+        }
+
+        return resType;
+    }
+}
+===== ./src/main/java/ru/zyryanova/ProductService/globalHandler/GlobalExceptionHandler.java =====
+package ru.zyryanova.ProductService.globalHandler;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.zyryanova.ProductService.globalHandler.exception.PersonNotFoundException;
+import ru.zyryanova.ProductService.globalHandler.exception.ProductNotFoundException;
+
+import java.util.Map;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(PersonNotFoundException.class)
+    public ResponseEntity<?> handlePersonNotFound(PersonNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of(
+                "error", "person_not_found",
+                "message", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<?> handleProductNotFound(ProductNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of(
+                "error", "product_not_found",
+                "message", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(400).body(Map.of(
+                "error", "illegal_state",
+                "message", ex.getMessage()
+        ));
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/globalHandler/exception/ProductNotFoundException.java =====
+package ru.zyryanova.ProductService.globalHandler.exception;
+
+public class ProductNotFoundException extends RuntimeException{
+    public ProductNotFoundException(String message) {
+        super(message);
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/globalHandler/exception/PersonNotFoundException.java =====
+package ru.zyryanova.ProductService.globalHandler.exception;
+
+public class PersonNotFoundException extends RuntimeException{
+    public PersonNotFoundException(String message) {
+        super(message);
+    }
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/ProductClassScoreRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.zyryanova.ProductService.entity.ProductClassScore;
+
+import java.util.List;
+
+public interface ProductClassScoreRepo extends JpaRepository<ProductClassScore, Integer> {
+    List<ProductClassScore> findByProduct_ProductId(Integer productId);
+    void deleteByProduct_ProductId(Integer productId);
+}
+===== ./src/main/java/ru/zyryanova/ProductService/repo/ProductRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.zyryanova.ProductService.entity.bd.Product;
+
+import java.util.List;
+
+@Repository
+public interface ProductRepo extends JpaRepository<Product, Integer>{
+    List<Product> findByProductSuitability_HairTypeId(int hairTypeId);
+    Product findByProductName(String productName);
+
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/PersonRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.zyryanova.ProductService.entity.auth.Person;
+
+@Repository
+public interface PersonRepo extends JpaRepository<Person, Integer> {
+    Person findByEmail(String email);
+}
+===== ./src/main/java/ru/zyryanova/ProductService/repo/RelevantRangeRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.zyryanova.ProductService.entity.bd.RelevantRange;
+
+import java.util.List;
+
+@Repository
+public interface RelevantRangeRepo extends JpaRepository<RelevantRange, Integer> {
+    List<RelevantRange> findByHairType_HairTypeId(Integer hairTypeId);
+}
+===== ./src/main/java/ru/zyryanova/ProductService/repo/PurposeIngRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.zyryanova.ProductService.entity.bd.PurposeIng;
+
+@Repository
+public interface PurposeIngRepo extends JpaRepository<PurposeIng, Integer> {
+
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/HairTypeRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.zyryanova.ProductService.entity.bd.HairType;
+
+public interface HairTypeRepo extends JpaRepository<HairType, Integer> {
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/IngredientRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.zyryanova.ProductService.entity.bd.Ingredient;
+
+public interface IngredientRepo extends JpaRepository<Ingredient, Integer> {
+    Ingredient findByIngredientName(String name);
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/ProductTypeRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.zyryanova.ProductService.entity.bd.ProductType;
+
+public interface ProductTypeRepo extends JpaRepository<ProductType, Integer> {
+    ProductType findByProductTypeName(String productTypeName);
+}
+
+===== ./src/main/java/ru/zyryanova/ProductService/repo/PersonResultRepo.java =====
+package ru.zyryanova.ProductService.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.zyryanova.ProductService.entity.bd.PersonResult;
+
+import java.util.List;
+
+@Repository
+public interface PersonResultRepo extends JpaRepository<PersonResult, Integer> {
+    List<PersonResult> findByPerson_IdOrderByCreatedAtDesc(Integer personId);
+}
+
