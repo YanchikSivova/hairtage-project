@@ -31,7 +31,7 @@ public class SecurityConfig {
                                 "/person/selection",
                                 "/auth/check"
                         ).permitAll()
-                        .requestMatchers("/person/accountInfo", "/person/selection/auth").authenticated()
+                        .requestMatchers("/person/accountInfo", "/person/selection/auth","/person/update").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/product/addProducts").hasRole("ADMIN")
                         .anyRequest().permitAll()

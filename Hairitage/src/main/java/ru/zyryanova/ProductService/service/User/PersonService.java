@@ -2,6 +2,7 @@ package ru.zyryanova.ProductService.service.User;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.zyryanova.ProductService.entity.auth.Person;
@@ -22,11 +23,13 @@ import java.util.List;
 public class PersonService {
     private final PersonResultRepo personResultRepo;
     private final PersonRepo personRepo;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final Finder finder;
 
-    public PersonService(PersonResultRepo personResultRepo, PersonRepo personRepo, Finder finder) {
+    public PersonService(PersonResultRepo personResultRepo, PersonRepo personRepo, BCryptPasswordEncoder bCryptPasswordEncoder, Finder finder) {
         this.personResultRepo = personResultRepo;
         this.personRepo = personRepo;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.finder = finder;
     }
 
@@ -56,21 +59,20 @@ public class PersonService {
     }
 
     @Transactional
-    public void updatePerson(PersonUpdateDto personUpdateDto, Authentication authentication) {
-        Person person = finder.findPersonOrThrow(authentication.getName());
+    public void updatePerson(PersonUpdateDto dto, Authentication authentication) {
 
-        if (personUpdateDto.getEmail() != null && !personUpdateDto.getEmail().isBlank()) {
-            Person existingPerson = personRepo.findByEmail(personUpdateDto.getEmail());
-            if (existingPerson != null && existingPerson.getId() != person.getId()) {
-                throw new IllegalStateException("Email уже используется");
-            }
-            person.setEmail(personUpdateDto.getEmail());
-        }
+        String email = authentication.getName();
 
-        if (personUpdateDto.getUsername() != null && !personUpdateDto.getUsername().isBlank()) {
-            person.setUsername(personUpdateDto.getUsername());
-        }
+        Person person = finder.findPersonOrThrow(email);
+
+        person.setUsername(dto.getUsername());
+        person.setEmail(dto.getEmail());
+
+        person.setPassword(bCryptPasswordEncoder.encode(dto.getPassword()));
+
+        personRepo.save(person);
     }
+
 
     public List<PersonResultDto> findPersonREsultDtoList(List<PersonResult> list){
         List<PersonResultDto> result = new ArrayList<>();

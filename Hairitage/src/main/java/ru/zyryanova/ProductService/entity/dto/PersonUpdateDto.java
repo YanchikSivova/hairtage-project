@@ -3,21 +3,22 @@ package ru.zyryanova.ProductService.entity.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class PersonUpdateDto {
+
     @NotBlank
     private String username;
     @NotBlank
     @Email
     private String email;
 
+    @NotBlank
+    private String password;
+
     public PersonUpdateDto() {
     }
 
-    public PersonUpdateDto(String username, String email) {
-        this.username = username;
-        this.email = email;
-    }
 
     public String getUsername() {
         return username;
@@ -33,5 +34,13 @@ public class PersonUpdateDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

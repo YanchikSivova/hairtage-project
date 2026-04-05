@@ -118,7 +118,7 @@ export const useAuth = () => {
         setLoading(true);
         setError(null);
         try {
-            await authApi.settings({ username, email, password });
+            await authApi.settings(username, email, password);
             await checkAuth();
             return true;
         } catch (err) {
@@ -128,7 +128,6 @@ export const useAuth = () => {
             setLoading(false);
         }
     };
-
     const logout = async () => {
         setLoading(true);
         try {
