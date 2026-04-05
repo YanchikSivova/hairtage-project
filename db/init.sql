@@ -92,16 +92,6 @@ CREATE TABLE product_suitability (
 
 
 
-
-
-INSERT INTO person (username, email, password, role)
-VALUES (
-    'anya',
-    'anya@main.ru',
-    '$2a$10$7QJ0l2X2b7d3YqP8lY9Z3u3C8v3Wm4gQ3ZqvYkXkYq8yYcY5Q0l5K',
-    'ADMIN'
-);
-
 INSERT INTO product_type (product_type_name) VALUES
 ('Шампунь'),
 ('Бальзам'),
@@ -821,3 +811,49 @@ INSERT INTO product_suitability (product_id, hairtype_id) VALUES
 ((SELECT product_id FROM product WHERE product_name = 'SYSTEM PROFESSIONALИнтенсивная маска для объема VOLUMIZE MASK'), (SELECT hairtype_id FROM hairtype WHERE hairtype_name = 'Стекловидные')),
 ((SELECT product_id FROM product WHERE product_name = 'Christophe Robin Hydrating Melting Mask with Aloe Vera'), (SELECT hairtype_id FROM hairtype WHERE hairtype_name = 'Стекловидные')),
 ((SELECT product_id FROM product WHERE product_name = 'Wella ProfessionalsInvigo Volume Boost Crystal Mask'), (SELECT hairtype_id FROM hairtype WHERE hairtype_name = 'Стекловидные'));
+
+
+-- HAIRTYPE 1
+INSERT INTO relevant_range (purpose_id, hairtype_id, min_value, max_value) VALUES
+(1,1,0,20),
+(2,1,20,100),
+(3,1,0,20),
+(4,1,20,100),
+(5,1,20,100),
+(6,1,20,100),
+(7,1,20,100),
+(8,1,0,40),
+(9,1,20,100),
+(10,1,20,100),
+(11,1,0,20),
+(12,1,0,40);
+
+-- HAIRTYPE 2
+INSERT INTO relevant_range (purpose_id, hairtype_id, min_value, max_value) VALUES
+(1,2,0,20),
+(2,2,20,100),
+(3,2,0,20),
+(4,2,20,100),
+(5,2,20,100),
+(6,2,20,100),
+(7,2,20,100),
+(8,2,0,40),
+(9,2,20,100),
+(10,2,20,100),
+(11,2,0,20),
+(12,2,0,40);
+
+-- HAIRTYPE 3
+INSERT INTO relevant_range (purpose_id, hairtype_id, min_value, max_value) VALUES
+(1,3,0,20),
+(2,3,20,100),
+(3,3,0,20),
+(4,3,20,100),
+(5,3,20,100),
+(6,3,20,100),
+(7,3,20,100),
+(8,3,0,40),
+(9,3,20,100),
+(10,3,20,100),
+(11,3,0,20),
+(12,3,0,40);
