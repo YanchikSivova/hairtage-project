@@ -1,6 +1,7 @@
 package ru.zyryanova.ProductService.globalHandler;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.zyryanova.ProductService.globalHandler.exception.PersonNotFoundException;
@@ -32,6 +33,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(Map.of(
                 "error", "illegal_state",
                 "message", ex.getMessage()
+        ));
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
+
+        String error = ex.getBindingResult()
+                .getFieldErrors()
+                .get(0)
+                .getDefaultMessage();
+
+        return ResponseEntity.status(400).body(Map.of(
+                "error", "validation_error",
+                "message", error
         ));
     }
 }

@@ -20,8 +20,6 @@ public class AnalyzeService {
     private final Finder finder;
     private final PurposeIngRepo purposeIngRepo;
     private final RelevantRangeRepo relevantRangeRepo;
-    private static final int K1 = 3;
-    private static final int K2 = 2;
 
     public AnalyzeService(
             IngredientRepo ingredientRepo,
@@ -41,30 +39,37 @@ public class AnalyzeService {
         this.relevantRangeRepo = relevantRangeRepo;
     }
 
+    private int getWeightByPosition(int position) {
+        if (position >= 1 && position <= 3) {
+            return 10; // 1.0
+        }
+        if (position >= 4 && position <= 6) {
+            return 7; // 0.7
+        }
+        if (position >= 7 && position <= 10) {
+            return 4; // 0.4
+        }
+        if (position >= 11 && position <= 15) {
+            return 2; // 0.2
+        }
+        return 1; // 0.1
+    }
+
     public Map<Integer, Integer> calculateScores(Product product) {
         Map<Integer, Integer> scores = new HashMap<>();
 
         List<String> ingredients = product.getIngredientsList();
-        int size = ingredients.size();
 
-        int firstPart = size / 3;
-        int secondPart = (2 * size) / 3;
-
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < ingredients.size(); i++) {
             String ingredientName = ingredients.get(i);
             Ingredient ingredient = ingredientRepo.findByIngredientName(ingredientName);
 
-            if (ingredient == null) continue;
-
-            int weight;
-
-            if (i < firstPart) {
-                weight = K1;
-            } else if (i < secondPart) {
-                weight = K2;
-            } else {
+            if (ingredient == null) {
                 continue;
             }
+
+            int position = i + 1;
+            int weight = getWeightByPosition(position);
 
             Integer purposeId = ingredient.getPurposeIng().getPurposeIngId();
             scores.put(purposeId, scores.getOrDefault(purposeId, 0) + weight);
@@ -87,6 +92,7 @@ public class AnalyzeService {
             pcs.setProduct(product);
             pcs.setPurposeIng(purposeIng);
             pcs.setScore(score);
+
             productClassScoreRepo.save(pcs);
         }
     }

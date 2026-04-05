@@ -47,5 +47,5 @@ export const authApi = {
 //Проверяет авторизован ли пользователь
     checkAuth: () => api.get('/person/checkAuth').then(res => res.data),
 
-    settings: (username, email) => api.patch('/person/update', {username, email}).then(res => res.data),  //
+    settings: (username, email, password) => api.patch('/person/update', {username, email, password}).then(res => res.data),  //
 };
