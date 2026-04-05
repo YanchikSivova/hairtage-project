@@ -1,0 +1,85 @@
+.assign-admin-modal-content {
+  width: min(620px, calc(100vw - 32px));
+  padding: 36px;
+  border: 1px solid var(--green-dark);
+}
+
+.assign-admin-title {
+  font-size: 2rem;
+  font-weight: 400;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.assign-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assign-admin-label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assign-admin-label span {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.assign-admin-input {
+  width: 100%;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid var(--green-dark);
+  padding: 0 18px;
+  font-size: 1.05rem;
+  font-family: var(--font-main);
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.assign-admin-input:focus {
+  box-shadow: 0 0 0 3px rgba(162, 214, 109, 0.22);
+}
+
+.assign-admin-buttons {
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.assign-admin-buttons .modal-btn {
+  margin: 0;
+  min-width: 150px;
+}
+
+@media (max-width: 900px) {
+  .assign-admin-modal-content {
+    padding: 24px;
+  }
+
+  .assign-admin-title {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+  }
+
+  .assign-admin-label span {
+    font-size: 1.15rem;
+  }
+
+  .assign-admin-input {
+    height: 56px;
+    font-size: 1rem;
+  }
+
+  .assign-admin-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .assign-admin-buttons .modal-btn {
+    width: 100%;
+  }
+}
