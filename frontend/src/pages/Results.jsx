@@ -3,6 +3,7 @@ import { useResults } from "../hooks/useResults";
 import { useEffect } from "react";
 import '../styles/pages/results.css'
 import { useLocation } from "react-router-dom";
+import { getPublicImagePath } from "../../utils/imagePath";
 function Results() {
     const location = useLocation();
     const {mode, hairTypeId} = location.state || {mode: 'last'};
@@ -46,7 +47,7 @@ function Results() {
                     {products.map(product => (
                         <div key={product.id || product.productName} className="product-card">
                             <img
-                                src = {`/images/${product.picUrl}`}
+                                src={`/images${getPublicImagePath(product.picUrl)}`}
                                 alt={product.name}
                             />
                             <div className="product-info">
