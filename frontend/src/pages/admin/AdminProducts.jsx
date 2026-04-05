@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { adminApi } from '../../api/hairtageApi'
+import { adminApi, authApi } from '../../api/hairtageApi'
 import { useAuth } from '../../hooks/useAuth'
 import ConfirmModal from '../../components/ConfirmModal'
+import AssignAdminModal from '../../components/AssignAdminModal'
+import BulkAddProductsModal from '../../components/BulkAddProductsModal'
 import logo from '../../assets/icons/logo.svg'
 import '../../styles/pages/admin-products.css'
 
@@ -10,6 +12,33 @@ const PRICE_LABELS = {
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+}
+
+function normalizeProduct(product) {
+  return {
+    ...product,
+    productTypeName:
+      product.productTypeName ||
+      product.productType?.productTypeName ||
+      'Без категории',
+    ingredients:
+      product.ingredients ||
+      product.ingredientsList ||
+      [],
+  }
+}
+
+function buildAdminDisplayName(profile) {
+  const username = String(profile?.username || '').trim()
+
+  if (username) {
+    return `admin_${username}`
+  }
+
+  return 'Администратор'
 }
 
 export default function AdminProducts() {
@@ -22,6 +51,28 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showAssignAdminModal, setShowAssignAdminModal] = useState(false)
+  const [showBulkAddProductsModal, setShowBulkAddProductsModal] = useState(false)
+  const [adminName, setAdminName] = useState('Администратор')
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await adminApi.getProducts()
+      const normalized = Array.isArray(data)
+        ? data.map(normalizeProduct)
+        : []
+
+      setProducts(normalized)
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Не удалось загрузить продукты')
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     document.body.classList.add('admin-products-body')
@@ -32,22 +83,20 @@ export default function AdminProducts() {
   }, [])
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      setError(null)
+    fetchProducts()
+  }, [])
 
+  useEffect(() => {
+    const loadAdminProfile = async () => {
       try {
-        const data = await adminApi.getProducts()
-        setProducts(Array.isArray(data) ? data : [])
+        const profile = await authApi.getMe()
+        setAdminName(buildAdminDisplayName(profile))
       } catch (err) {
-        setError(err?.response?.data?.message || 'Не удалось загрузить продукты')
-        setProducts([])
-      } finally {
-        setLoading(false)
+        setAdminName('Администратор')
       }
     }
 
-    fetchProducts()
+    loadAdminProfile()
   }, [])
 
   const filteredProducts = useMemo(() => {
@@ -123,6 +172,10 @@ export default function AdminProducts() {
     navigate('/admin/login', { replace: true })
   }
 
+  const handleBulkAddSuccess = async () => {
+    await fetchProducts()
+  }
+
   return (
     <>
       <header className='admin-top'>
@@ -151,18 +204,34 @@ export default function AdminProducts() {
             </svg>
           </button>
 
-          <div className='admin-user'>Администратор</div>
+          <div className='admin-user'>{adminName}</div>
         </div>
 
         <div className='admin-top-right'>
-          <button
-            type='button'
-            className='brand brand-button'
-            onClick={() => navigate('/')}
-          >
+          <div className='admin-service-toolbar'>
+            <button
+              type='button'
+              className='admin-top-action-btn'
+              onClick={() => setShowAssignAdminModal(true)}
+              disabled={loading}
+            >
+              Добавить админа
+            </button>
+
+            <button
+              type='button'
+              className='admin-top-action-btn'
+              onClick={() => setShowBulkAddProductsModal(true)}
+              disabled={loading}
+            >
+              Загрузить базу (JSON)
+            </button>
+          </div>
+
+          <div className='brand admin-brand-static' aria-label='Hairtage'>
             <span>Hairtage</span>
             <img src={logo} alt='Hairtage logo' />
-          </button>
+          </div>
         </div>
       </header>
 
@@ -295,6 +364,17 @@ export default function AdminProducts() {
             ? `Удалить продукт "${selectedProduct.productName}"?`
             : 'Удалить продукт?'
         }
+      />
+
+      <AssignAdminModal
+        isOpen={showAssignAdminModal}
+        onClose={() => setShowAssignAdminModal(false)}
+      />
+
+      <BulkAddProductsModal
+        isOpen={showBulkAddProductsModal}
+        onClose={() => setShowBulkAddProductsModal(false)}
+        onSuccess={handleBulkAddSuccess}
       />
     </>
   )

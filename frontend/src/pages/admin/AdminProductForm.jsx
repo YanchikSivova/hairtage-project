@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { adminApi } from '../../api/hairtageApi'
 import ImageUrlModal from '../../components/ImageUrlModal'
@@ -14,6 +14,14 @@ const PRICE_OPTIONS = [
 // Латиница + цифры + пробелы + знаки, часто встречающиеся в INCI
 const INGREDIENTS_PATTERN = /^[A-Za-z0-9\s,.\-()/]+$/
 
+function getProductTypeName(product) {
+  return (
+    product?.productTypeName ||
+    product?.productType?.productTypeName ||
+    ''
+  )
+}
+
 export default function AdminProductForm() {
   const navigate = useNavigate()
   const { id } = useParams()
@@ -27,6 +35,9 @@ export default function AdminProductForm() {
   const [picUrl, setPicUrl] = useState('')
   const [showImageModal, setShowImageModal] = useState(false)
 
+  const [productTypes, setProductTypes] = useState([])
+  const [typesLoading, setTypesLoading] = useState(true)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -38,6 +49,31 @@ export default function AdminProductForm() {
     return () => {
       document.body.classList.remove('admin-product-body')
     }
+  }, [])
+
+  useEffect(() => {
+    const loadProductTypes = async () => {
+      setTypesLoading(true)
+
+      try {
+        const products = await adminApi.getProducts()
+        const uniqueTypes = Array.from(
+          new Set(
+            (Array.isArray(products) ? products : [])
+              .map(getProductTypeName)
+              .filter(Boolean)
+          )
+        ).sort((a, b) => a.localeCompare(b, 'ru'))
+
+        setProductTypes(uniqueTypes)
+      } catch (err) {
+        setProductTypes([])
+      } finally {
+        setTypesLoading(false)
+      }
+    }
+
+    loadProductTypes()
   }, [])
 
   useEffect(() => {
@@ -56,13 +92,25 @@ export default function AdminProductForm() {
           return
         }
 
+        const currentTypeName = getProductTypeName(product)
+
         setProductName(product.productName || '')
-        setProductTypeName(product.productTypeName || '')
+        setProductTypeName(currentTypeName)
         setPrice(product.price || 'LOW')
         setIngredientsInput(
-          Array.isArray(product.ingredients) ? product.ingredients.join(', ') : ''
+          Array.isArray(product.ingredients || product.ingredientsList)
+            ? (product.ingredients || product.ingredientsList).join(', ')
+            : ''
         )
         setPicUrl(product.picUrl || '')
+
+        setProductTypes((prev) => {
+          if (!currentTypeName || prev.includes(currentTypeName)) {
+            return prev
+          }
+
+          return [...prev, currentTypeName].sort((a, b) => a.localeCompare(b, 'ru'))
+        })
       } catch (err) {
         setError(err?.response?.data?.message || 'Не удалось загрузить продукт')
       } finally {
@@ -73,19 +121,26 @@ export default function AdminProductForm() {
     loadProduct()
   }, [id, isEdit])
 
+  const isSubmitDisabled = useMemo(() => {
+    return loading || typesLoading || productTypes.length === 0
+  }, [loading, typesLoading, productTypes.length])
+
   const validateForm = () => {
     const errors = {}
 
     const trimmedName = productName.trim()
     const trimmedType = productTypeName.trim()
     const trimmedIngredients = ingredientsInput.trim()
+    const trimmedPicUrl = picUrl.trim()
 
     if (!trimmedName) {
       errors.productName = 'Введите название продукта'
     }
 
     if (!trimmedType) {
-      errors.productTypeName = 'Введите тип продукта'
+      errors.productTypeName = 'Выберите тип продукта'
+    } else if (!productTypes.includes(trimmedType)) {
+      errors.productTypeName = 'Выберите тип продукта из списка'
     }
 
     if (!price || !['LOW', 'MEDIUM', 'HIGH'].includes(price)) {
@@ -108,6 +163,14 @@ export default function AdminProductForm() {
       errors.ingredients = 'Состав не должен быть пустым'
     }
 
+    if (!trimmedPicUrl) {
+      errors.picUrl = 'Добавьте ссылку на изображение'
+    }
+
+    if (productTypes.length === 0) {
+      errors.productTypeName = 'Не удалось загрузить типы продуктов'
+    }
+
     return errors
   }
 
@@ -116,6 +179,7 @@ export default function AdminProductForm() {
 
     setError(null)
     setSuccessMessage('')
+
     const validationErrors = validateForm()
     setFieldErrors(validationErrors)
 
@@ -165,6 +229,7 @@ export default function AdminProductForm() {
 
   const handleSaveImage = (newUrl) => {
     setPicUrl(newUrl)
+    setFieldErrors((prev) => ({ ...prev, picUrl: '' }))
     setShowImageModal(false)
   }
 
@@ -204,14 +269,10 @@ export default function AdminProductForm() {
         </div>
 
         <div className='admin-top-right'>
-          <button
-            type='button'
-            className='brand brand-button'
-            onClick={() => navigate('/')}
-          >
+          <div className='brand admin-brand-static' aria-label='Hairtage'>
             <span>Hairtage</span>
             <img src={logo} alt='Hairtage logo' />
-          </button>
+          </div>
         </div>
       </header>
 
@@ -226,6 +287,7 @@ export default function AdminProductForm() {
                   <span>Нет изображения</span>
                 )}
               </div>
+              {fieldErrors.picUrl && <p className='warn'>{fieldErrors.picUrl}</p>}
             </div>
 
             <div className='fields-col'>
@@ -245,15 +307,28 @@ export default function AdminProductForm() {
 
               <label className='field'>
                 <span>Тип продукта</span>
-                <input
-                  type='text'
+                <select
                   value={productTypeName}
                   onChange={(e) => {
                     setProductTypeName(e.target.value)
                     setFieldErrors((prev) => ({ ...prev, productTypeName: '' }))
                   }}
-                  disabled={loading}
-                />
+                  disabled={loading || typesLoading || productTypes.length === 0}
+                >
+                  <option value=''>
+                    {typesLoading
+                      ? 'Загрузка типов продуктов...'
+                      : productTypes.length === 0
+                        ? 'Типы продуктов недоступны'
+                        : 'Выберите тип продукта'}
+                  </option>
+
+                  {productTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
                 {fieldErrors.productTypeName && (
                   <p className='warn'>{fieldErrors.productTypeName}</p>
                 )}
@@ -312,7 +387,12 @@ export default function AdminProductForm() {
             Отменить
           </button>
 
-          <button type='submit' form='admin-product-form' className='green-btn' disabled={loading}>
+          <button
+            type='submit'
+            form='admin-product-form'
+            className='green-btn'
+            disabled={isSubmitDisabled}
+          >
             {loading ? 'Сохранение...' : 'Сохранить'}
           </button>
         </aside>

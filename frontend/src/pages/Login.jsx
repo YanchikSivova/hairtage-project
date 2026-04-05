@@ -36,7 +36,7 @@ import { useAuth } from "../hooks/useAuth";
         }
         
         if (!formData.password){
-            error.password = 'Пароль обязателен';
+            errors.password = 'Пароль обязателен';
         }else if (formData.password.length < 8){
             errors.password = 'Пароль должен быть минимум 8 символов';
         }
