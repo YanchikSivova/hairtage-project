@@ -1,21 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import '../styles/image-url-modal.css'
 
 export default function ImageUrlModal({
-  isOpen,
   initialValue = '',
   onSave,
   onCancel,
 }) {
   const [value, setValue] = useState(initialValue)
-
-  useEffect(() => {
-    if (isOpen) {
-      setValue(initialValue || '')
-    }
-  }, [isOpen, initialValue])
-
-  if (!isOpen) return null
 
   const handleSubmit = (e) => {
     e.preventDefault()

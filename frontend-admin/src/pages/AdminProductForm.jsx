@@ -458,12 +458,13 @@ export default function AdminProductForm() {
         </aside>
       </section>
 
-      <ImageUrlModal
-        isOpen={showImageModal}
-        initialValue={picUrl}
-        onSave={handleSaveImage}
-        onCancel={handleCloseImageModal}
-      />
+      {showImageModal && (
+        <ImageUrlModal
+          initialValue={picUrl}
+          onSave={handleSaveImage}
+          onCancel={handleCloseImageModal}
+        />
+      )}
     </>
   )
 }

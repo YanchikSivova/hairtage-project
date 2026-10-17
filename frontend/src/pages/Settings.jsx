@@ -4,30 +4,21 @@ import brush from '../assets/icons/brush.svg';
 import '../styles/pages/settings.css';
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 function Settings() {
     const navigate = useNavigate();
     const { user, settings, loading } = useAuth();
-    const [formData, setFormData] = useState({
-        username: user?.username,
-        email: user?.email,
-        password: ""
-    });
-    useEffect(() => {
-        if (user) {
-            setFormData(prev => ({
-                ...prev,
-                username: user.username,
-                email: user.email
-            }));
-        }
-    }, [user]);
+    const [formData, setFormData] = useState(null);
+    const currentFormData = formData ?? {
+        username: user?.username ?? '',
+        email: user?.email ?? '',
+        password: ''
+    };
     const [validationErrors, setValidationErrors] = useState({});
     const handleChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({
-            ...prev,
+            ...(prev ?? currentFormData),
             [id]: value
         }));
         setValidationErrors(prev => ({
@@ -38,18 +29,18 @@ function Settings() {
 
     const validateForm = () => {
         const errors = {};
-        if (!formData.username.trim()) {
+        if (!currentFormData.username.trim()) {
             errors.username = 'Имя обязательно';
         }
 
-        if (!formData.email) {
+        if (!currentFormData.email) {
             errors.email = 'Email обязателен';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        } else if (!/\S+@\S+\.\S+/.test(currentFormData.email)) {
             errors.email = 'Введите корректный email';
         }
-        if (!formData.password){
+        if (!currentFormData.password){
             errors.password='Пароль обязателен'
-        }else if (formData.password && formData.password.length < 8) {
+        }else if (currentFormData.password && currentFormData.password.length < 8) {
             errors.password = 'Пароль должен быть минимум 8 символов';
         }
         return errors;
@@ -62,9 +53,9 @@ function Settings() {
             return;
         }
         const success = await settings(
-            formData.username,
-            formData.email,
-            formData.password,
+            currentFormData.username,
+            currentFormData.email,
+            currentFormData.password,
         );
         if (success) {
             navigate('/account')
@@ -90,7 +81,7 @@ function Settings() {
                         <input
                             type="text"
                             id="username"
-                            value={formData.username}
+                            value={currentFormData.username}
                             onChange={handleChange}
                             className={validationErrors.username ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
@@ -107,7 +98,7 @@ function Settings() {
                             type="email"
                             id="email"
                             placeholder="your@email.com"
-                            value={formData.email}
+                            value={currentFormData.email}
                             onChange={handleChange}
                             className={validationErrors.email ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
@@ -125,7 +116,7 @@ function Settings() {
                             type="password"
                             id="password"
                             placeholder="••••••••"
-                            value={formData.password}
+                            value={currentFormData.password}
                             onChange={handleChange}
                             className={validationErrors.password ? 'settings-input error' : 'settings-input'}
                             disabled={loading}
