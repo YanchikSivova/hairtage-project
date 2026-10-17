@@ -96,7 +96,7 @@ export default function AdminProducts() {
       try {
         const profile = await authApi.getMe()
         setAdminName(buildAdminDisplayName(profile))
-      } catch (err) {
+      } catch {
         setAdminName('Администратор')
       }
     }

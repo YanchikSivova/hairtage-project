@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import '../styles/pages/home.css'
 import target from '../assets/icons/target.svg';
 import shield from '../assets/icons/shield.svg';

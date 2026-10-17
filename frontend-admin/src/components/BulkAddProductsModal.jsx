@@ -86,7 +86,7 @@ export default function BulkAddProductsModal({ isOpen, onClose, onSuccess }) {
 
     try {
       parsed = JSON.parse(jsonInput)
-    } catch (parseError) {
+    } catch {
       setError('Некорректный JSON')
       return
     }

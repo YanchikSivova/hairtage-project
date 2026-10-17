@@ -13,12 +13,14 @@ import ru.zyryanova.ProductService.repo.PersonRepo;
 import ru.zyryanova.ProductService.repo.PersonResultRepo;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class SelectionService {
+    private static final int EXPECTED_ANSWER_COUNT = 5;
+    private static final int HAIR_TYPE_COUNT = 3;
+    private static final int SKIP_OPTION = 4;
+
     private final PersonRepo personRepo;
     private final HairTypeRepo hairTypeRepo;
     private final Finder finder;
@@ -33,22 +35,7 @@ public class SelectionService {
 
     @Transactional
     public int selectHairType(List<Integer> answers, Authentication authentication){
-        Map<Integer, Integer> countMap = new HashMap<>();
-
-        for (int answer : answers) {
-            countMap.put(answer, countMap.getOrDefault(answer, 0) + 1);
-        }
-
-        int resType = 0;
-        int resValue = 0;
-
-        for (int key : countMap.keySet()) {
-            int value = countMap.get(key);
-            if (value > resValue) {
-                resValue = value;
-                resType = key;
-            }
-        }
+        int resType = determineHairType(answers);
 
         if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
             Person person = finder.findPersonOrThrow(authentication.getName());
@@ -60,5 +47,31 @@ public class SelectionService {
         }
 
         return resType;
+    }
+
+    static int determineHairType(List<Integer> answers) {
+        if (answers == null || answers.size() != EXPECTED_ANSWER_COUNT) {
+            throw new IllegalArgumentException("Необходимо ответить на все 5 вопросов");
+        }
+
+        int[] counts = new int[HAIR_TYPE_COUNT];
+        for (int index = 0; index < answers.size(); index++) {
+            Integer answer = answers.get(index);
+            int maxOption = index == EXPECTED_ANSWER_COUNT - 1 ? SKIP_OPTION : HAIR_TYPE_COUNT;
+            if (answer == null || answer < 1 || answer > maxOption) {
+                throw new IllegalArgumentException("Ответ содержит недопустимый вариант");
+            }
+            if (answer <= HAIR_TYPE_COUNT) {
+                counts[answer - 1]++;
+            }
+        }
+
+        int result = 1;
+        for (int index = 1; index < counts.length; index++) {
+            if (counts[index] > counts[result - 1]) {
+                result = index + 1;
+            }
+        }
+        return result;
     }
 }
