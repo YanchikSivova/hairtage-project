@@ -1,12 +1,12 @@
 import { useAuth } from "./useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getResults, postSurvey, getResultsByHairtype } from "../api/hairtageApi";
 export const useResults = (mode, hairTypeId) => {
     const { user } = useAuth()  //будет true/false
     const [results, setResults] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
-    const receiveResults = async () => {
+    const receiveResults = useCallback(async () => {
         setLoading(true)
         setError(null)
         // try {
@@ -63,10 +63,10 @@ export const useResults = (mode, hairTypeId) => {
         }finally{
             setLoading(false);
         }
-    };
+    }, [mode, hairTypeId]);
     useEffect(() => {
         receiveResults();
-    }, [user,mode]);
+    }, [receiveResults, user]);
 
     const shampoos = results.filter(p => p.productTypeName === "Шампунь");
     const conditioners = results.filter(p => p.productTypeName === "Бальзам");

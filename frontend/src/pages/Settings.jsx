@@ -8,8 +8,7 @@ import { useEffect } from "react";
 
 function Settings() {
     const navigate = useNavigate();
-    const { user, settings } = useAuth();
-    const [loading, setLoading] = useState(false);
+    const { user, settings, loading } = useAuth();
     const [formData, setFormData] = useState({
         username: user?.username,
         email: user?.email,

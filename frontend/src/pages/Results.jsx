@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useResults } from "../hooks/useResults";
 import { useEffect } from "react";
 import '../styles/pages/results.css'

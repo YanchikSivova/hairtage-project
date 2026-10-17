@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { api } from "../api/apiClient";
 import { authApi } from "../api/hairtageApi";
 import { useLocation } from "react-router-dom";
 
@@ -67,7 +66,7 @@ export const useAuth = () => {
                 } else {
                     setUser(null);
                 }
-            } catch (err) {
+            } catch {
                 setIsAuth(false);
                 setUser(null);
             } finally {
@@ -134,7 +133,7 @@ export const useAuth = () => {
             await authApi.logout();
             setIsAuth(false);
             setUser(null);
-        } catch (err) {
+        } catch {
             setError('Ошибка при выходе');
         } finally {
             setLoading(false);

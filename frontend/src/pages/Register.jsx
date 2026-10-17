@@ -4,6 +4,7 @@ import brush from '../assets/icons/brush.svg';
 import '../styles/pages/register.css'
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { postSurvey } from "../api/hairtageApi";
 
 function Register() {
     const navigate = useNavigate();
@@ -43,7 +44,7 @@ function Register() {
         }
 
         if (!formData.password) {
-            error.password = 'Пароль обязателен';
+            errors.password = 'Пароль обязателен';
         } else if (formData.password.length < 8) {
             errors.password = 'Пароль должен быть минимум 8 символов';
         }
@@ -65,8 +66,9 @@ function Register() {
 
         if (success) {
             //Если до этого был пройден опрос, отправить его на сервер, удалить из локалсторадж
-            if (localStorage.getItem("answers") !== null) {
-                await postAuthSurveys(localStorage.getItem("answers"))
+            const savedAnswers = localStorage.getItem("answers");
+            if (savedAnswers !== null) {
+                await postSurvey(JSON.parse(savedAnswers));
                 localStorage.removeItem("answers")
             }
             navigate('/account');

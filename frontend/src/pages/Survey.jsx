@@ -20,8 +20,6 @@ const Survey = () => {
         currentIndex,
         currentQuestion,
         selectedOptionIndex,
-        error,
-        setError,
         answers,
         totalQuestions,
         isLastQuestion,
@@ -29,7 +27,6 @@ const Survey = () => {
         saveAnswer,
         goToNext,
         goToPrevious,
-        submitAnswers,
     } = useSurvey();
 
     const handleNext = async () => {
