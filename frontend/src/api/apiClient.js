@@ -7,7 +7,13 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  const method = config.method?.toLowerCase();
+  if (["post", "put", "patch", "delete"].includes(method)) {
+    const { data: csrf } = await api.get("/csrf");
+    config.headers[csrf.headerName] = csrf.token;
+  }
+
   if (config.headers?.["Content-Type"] === "application/x-www-form-urlencoded") {
     if (
       config.data &&
