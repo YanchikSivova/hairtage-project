@@ -73,7 +73,7 @@ export default function AdminProductForm() {
       try {
         const profile = await authApi.getMe()
         setAdminName(buildAdminDisplayName(profile))
-      } catch (err) {
+      } catch {
         setAdminName('Администратор')
       }
     }
@@ -100,7 +100,7 @@ export default function AdminProductForm() {
         ).sort((a, b) => a.localeCompare(b, 'ru'))
 
         setProductTypes(uniqueTypes)
-      } catch (err) {
+      } catch {
         setProductTypes([])
       } finally {
         setTypesLoading(false)
